@@ -1,0 +1,20 @@
+// Maven publish task
+publishing {
+      publications {
+	  switch ( "${projectExportType}" ) {
+	      case "war":
+				webApp(MavenPublication) {
+			    	from components.web
+				}
+	  		break
+	      case "jar":
+      	  		mavenJava(MavenPublication) {
+      	  			from components.java
+     			}
+	  }
+  }
+}
+
+// The following lines are used for updating; if removed you will be repsonsible for merging/updating file.
+// Template=TV2default
+// TemplateVersion=1.0.0

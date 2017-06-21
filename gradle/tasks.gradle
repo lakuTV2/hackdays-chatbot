@@ -1,0 +1,35 @@
+// TV2 Gradle Tasks
+//task(copyEnvironmentConfiguration,type: Copy) {
+//    from "./src/main/environments/$environment/.env"
+//    into "./build/resources/main/"
+//}
+
+task buildnumber << {
+       env = System.getenv()
+       env.each{
+       key, value -> println "$key = $value";
+    }
+}
+
+task downloadContainer << {
+def f = new File('./jetty.zip')
+if (!f.exists()) {
+      new URL('http://a.artifactory.dev.tv2net.dk:8081/artifactory/simple/containers/stable/jetty/9.2.9.v20150224/jetty-9.2.9.v20150224.zip').withInputStream{ i -> f.withOutputStream{ it << i }}
+}
+}
+
+jacocoTestReport {
+    reports {
+            xml.enabled false
+            csv.enabled false
+            html.destination "${buildDir}/reports/jacocoHtml"
+    }
+}
+
+// Can be omitted, but is here to display tests as they are run
+tasks.withType(Test) {
+        testLogging {
+                events "passed", "failed", "skipped", "standardOut", "standardError"
+                showExceptions true
+        }
+}

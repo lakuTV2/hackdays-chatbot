@@ -1,0 +1,115 @@
+// TV2 Gradle Build
+
+buildscript {
+    apply from: file('gradle/repositories.gradle')
+    dependencies {
+        classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '4.4.12')
+        classpath(group: 'org.akhikhl.gretty', name: 'gretty', version: '1.2.0')
+        classpath(group: 'com.h2database', name: 'h2', version: '1.3.170')
+        classpath(group: 'org.flywaydb', name: 'flyway-gradle-plugin', version: '3.1')
+    }
+}
+
+//plugins {
+//    id('org.sonarqube') version('1.2')
+//}
+
+// Apply plugins
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'findbugs'
+apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'maven-publish'
+apply plugin: 'war'
+apply plugin: 'flyway'
+apply plugin: 'jacoco'
+
+ext.branch = project.hasProperty('branch') ? project.getProperty('branch') : 'master'
+setProperty 'branch', branch
+
+println "Branch is set to $branch"
+
+//ext.environment = project.hasProperty('environment') ? project.getProperty('environment') : 'local'
+//setProperty 'environment', environment
+//
+//println "Environment is set to $environment"
+
+// Apply modules/tasks
+apply from: file('gradle/tasks.gradle')
+apply from: file('gradle/artifactory.gradle')
+apply from: file('gradle/database.gradle')
+apply from: file('gradle/findbugs.gradle')
+apply from: file('gradle/publishing.gradle')
+//apply from: file('gradle/sonarqube.gradle')
+//apply from: file('gradle/integrationtest.gradle')
+
+
+// Read environment variables, including variables passed by Jenking CI
+def env = System.getenv()
+def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") ?: 0
+def jenkinsBuildTag = System.getenv("BUILD_TAG") ?: 'dev'
+
+// version object
+// major, minor and releaseType properties from gradle.properties file
+// env.BUILD_NUMBER - from Jenkins server
+version = new Version(version_major: major as int, minor: minor as int, buildnumber: jenkinsBuildNumber as int, releaseType:releaseType)
+class Version {
+    int version_major
+    int minor
+    int buildnumber
+    String releaseType
+    String buildTime
+
+    String toString() {
+        "$version_major.$minor.$buildnumber-$releaseType"
+    }
+}
+
+// Project specific dependencies
+dependencies {
+    apply from: file('gradle/dependencies.gradle'), to: dependencies
+}
+// Define war specific options and properties
+apply from: file('gradle/war.gradle')
+
+// Define jar specific options and properties
+apply from: file('gradle/jar.gradle')
+
+// using ant, create a build.properties file with version information that can be later accessed by
+// java application.
+ant.mkdir(dir: "${sourceDirectory}/resources/");
+ant.propertyfile(file:"${sourceDirectory}/resources/build.properties", comment:'Build Properties') {
+    ant.entry(key:'version',value:version)
+    ant.entry(key:'build_tag',value:env.BUILD_TAG)
+    ant.entry(key:'buildTime', value:env.BUILD_ID)
+}
+
+// Define container specific options and properties
+apply from: file('gradle/container.gradle')
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}
+
+ext.compatibilityVersion = '1.8'
+
+idea {
+    module {
+        name = "$projectName"
+
+        testSourceDirs += file('src/integrationtest/java')
+        testSourceDirs += file('src/integrationtest/resources')
+        testSourceDirs += file('src/integrationtest/groovy')
+        testSourceDirs += file('src/test/groovy')
+
+    }
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+    reports.junitXml.destination = file("${reports.junitXml.destination}/${name}")
+}
+

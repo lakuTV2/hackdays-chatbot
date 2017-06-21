@@ -1,0 +1,35 @@
+ext.artifactory_user = project.hasProperty('artifactory_user') ? project.getProperty('artifactory_user') : 'editor'
+setProperty 'artifactory_user', artifactory_user
+ext.artifactory_password = project.hasProperty('artifactory_password') ? project.getProperty('artifactory_password') : 'KeyYDLJRCWmuQcge'
+setProperty 'artifactory_password', artifactory_password
+ext.artifactory_contextUrl = project.hasProperty('artifactory_contextUrl') ? project.getProperty('artifactory_contextUrl') : 'http://a.artifactory.dev.tv2net.dk:8081/artifactory'
+setProperty 'artifactory_contextUrl', artifactory_contextUrl
+
+def TV2Repositories = {
+			  maven {
+                  		url 'http://a.artifactory.dev.tv2net.dk:8081/artifactory/plugins-release-local'
+                  	 	credentials {
+                     	 	username = "${artifactory_user}"
+                      		password = "${artifactory_password}"
+                  		}
+              }
+			  mavenCentral()
+			  maven {
+                  		url 'http://a.artifactory.dev.tv2net.dk:8081/artifactory/libs-release-local'
+                  	 	credentials {
+                     	 	username = "${artifactory_user}"
+                      		password = "${artifactory_password}"
+                  		}
+        }
+			  maven {
+                    url "https://plugins.gradle.org/m2/"
+        }
+        mavenCentral()
+			  jcenter()
+}
+project.buildscript.repositories(TV2Repositories)
+repositories(TV2Repositories)
+
+// The following lines are used for updating; if removed you will be repsonsible for merging/updating file.
+// Template=TV2default
+// TemplateVersion=1.0.0

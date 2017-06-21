@@ -1,0 +1,48 @@
+// The projectName is set in the gradle.properties
+// This can be seen as the name of the artifact
+archivesBaseName = "${projectName}"
+
+// Chosing file to export
+// Could replace "war.archivePath" with "jar.archivePath" for publishing war instead
+// the archivePath holds the path to where the builded jar/war is in the filesystem
+switch ( "${projectExportType}" ) {
+    case "war":
+		artifacts {
+      		archives file(war.archivePath)
+		}
+		break
+    case "jar":
+		artifacts {
+      		archives file(jar.archivePath)
+		}
+}
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = "libs-${releaseType}-local"
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+        }
+        defaults {
+          switch ( "${projectExportType}" ) {
+  	      		case "war":
+					      publications ('webApp')
+					      break
+  	      		case "jar":
+  		  			  publications ('mavenJava')
+  	  		}
+          publishBuildInfo = true   //Publish build-info to Artifactory (true by default)
+          publishArtifacts = true   //Publish artifacts to Artifactory (true by default)
+          publishPom = false   //Publish generated POM files to Artifactory (true by default).
+          publishIvy = true   //Publish generated Ivy descriptor files to Artifactory (true by default).
+    	}
+  	}
+ } 
+
+
+// The following lines are used for updating; if removed you will be repsonsible for merging/updating file.
+// Template=TV2default
+// TemplateVersion=1.0.0
